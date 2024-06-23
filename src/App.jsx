@@ -1,34 +1,98 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react';
+import './App.css';
+import { TbPencilPlus } from 'react-icons/tb';
+import { v4 as uuid } from "uuid";
+import PopUp from './PopUp';
+import ToDoList from './ToDoList';
+
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [toDoList, setToDoList] = useState(() => {
+    const storedList = localStorage.getItem('toDoList');
+    return storedList ? JSON.parse(storedList) : [];
+  })
+  const [popUp, setPopUp] = useState(false);
+  const [newTaskText, setNewTaskText] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem('toDoList', JSON.stringify(toDoList));
+  }, [toDoList]);
+
+  function handlePopUp(action){
+    if (action === "open"){
+      setPopUp(true)
+    } else {
+      setPopUp(false)
+    }
+  }
+
+  function addTask(){
+    if(newTaskText !== ""){
+      setToDoList(current => {
+        return [
+          ...current,
+          {
+            id: uuid(),
+            complete: false,
+            text: newTaskText
+          }
+        ]
+      })
+      setNewTaskText("");
+      setPopUp(false)
+    }
+  }
+
+  function toggleComplete(id){
+    setToDoList(current => {
+      return current.map(item => {
+        if (item.id === id){
+          return {
+            ...item,
+            complete: !item.complete
+          }
+        }
+        return item;
+      });
+    });
+  }
+
+  function deleteTask(id) {
+    setToDoList(current => {
+      return current.filter(item => item.id !== id);
+    });
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
+    <PopUp
+      popUp={popUp}
+      handlePopUp={handlePopUp}
+      addTask={addTask}
+      newTaskText={newTaskText}
+      setNewTaskText={setNewTaskText}
+    />
+
+    {/* header */}
+    <div className='header-container'>
+      <div className='header'>
+        <p className='header-title'>
+          My Tasks
         </p>
+        <div className='header-add-task' onClick={() => handlePopUp("open")}>
+          <p className='header-add-task-text'>
+            <TbPencilPlus />
+          </p>
+        </div>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </div>
+
+    <ToDoList
+      toggleComplete ={toggleComplete}
+      deleteTask = {deleteTask}
+      toDoLists = {toDoList}
+    />
+  </>
   )
 }
 
